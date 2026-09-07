@@ -12,5 +12,7 @@ type APIResponse struct {
 func RegisterAPIRoutes(mux *http.ServeMux) {
 
 	mux.HandleFunc("/api/storages", apiStoragesHandler)
+	mux.HandleFunc("/api/folder-picker", apiFolderPickerHandler)
+	mux.HandleFunc("/api/check-folder", apiCheckFolderHandler)
 
 }
