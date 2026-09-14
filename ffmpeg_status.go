@@ -1,13 +1,14 @@
 package main
 
 import (
+	"nightveil-demon/media"
 	"os/exec"
 )
 
 func CheckFFmpeg() bool {
 
 	cmd := exec.Command(
-		ffmpegPath(),
+		media.FFmpegPath(),
 		"-version",
 	)
 

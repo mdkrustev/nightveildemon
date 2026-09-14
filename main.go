@@ -1,21 +1,26 @@
 package main
+
 import (
 	"fmt"
 	"net/http"
 	"nightveil-demon/api"
+	"nightveil-demon/media"
 	"nightveil-demon/middleware"
 	"os"
 	"os/exec"
 	"time"
 )
+
 const (
 	appName = "NightVeil Demon"
 	version = "v0.1.0"
-	port = 5226
+	port    = 5226
 )
+
 var server *http.Server
-func uiHandler(w http.ResponseWriter,r *http.Request){
-	html:=fmt.Sprintf(`
+
+func uiHandler(w http.ResponseWriter, r *http.Request) {
+	html := fmt.Sprintf(`
 <!doctype html>
 <html>
 <head>
@@ -94,24 +99,24 @@ fetch('/health')
 </script>
 </body>
 </html>
-`,appName,appName,version)
-	w.Header().Set("Content-Type","text/html; charset=utf-8")
-	fmt.Fprint(w,html)
+`, appName, appName, version)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, html)
 }
-func healthHandler(w http.ResponseWriter,r *http.Request){
-	cmd:=exec.Command(
-		ffmpegPath(),
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	cmd := exec.Command(
+		media.FFmpegPath(),
 		"-version",
 	)
-	if err:=cmd.Run();err!=nil{
+	if err := cmd.Run(); err != nil {
 		w.Write([]byte("❌ FFmpeg NOT working"))
 		return
 	}
 	w.Write([]byte("✅ FFmpeg ready"))
 }
-func testFFmpegHandler(w http.ResponseWriter,r *http.Request){
-	cmd:=exec.Command(
-		ffmpegPath(),
+func testFFmpegHandler(w http.ResponseWriter, r *http.Request) {
+	cmd := exec.Command(
+		media.FFmpegPath(),
 		"-f",
 		"lavfi",
 		"-i",
@@ -120,27 +125,27 @@ func testFFmpegHandler(w http.ResponseWriter,r *http.Request){
 		"null",
 		"-",
 	)
-	out,err:=cmd.CombinedOutput()
-	if err!=nil{
+	out, err := cmd.CombinedOutput()
+	if err != nil {
 		w.Write(out)
 		return
 	}
 	w.Write([]byte("FFmpeg OK"))
 }
-func quitHandler(w http.ResponseWriter,r *http.Request){
-	go func(){
+func quitHandler(w http.ResponseWriter, r *http.Request) {
+	go func() {
 		time.Sleep(
-			200*time.Millisecond,
+			200 * time.Millisecond,
 		)
-		if server!=nil{
+		if server != nil {
 			server.Close()
 		}
 		os.Exit(0)
 	}()
 	w.Write([]byte("bye"))
 }
-func main(){
-	mux:=http.NewServeMux()
+func main() {
+	mux := http.NewServeMux()
 	mux.HandleFunc(
 		"/",
 		uiHandler,
@@ -166,20 +171,20 @@ func main(){
 		wsHandler,
 	)
 	api.RegisterAPIRoutes(mux)
-	server=&http.Server{
-		Addr:fmt.Sprintf(":%d",port),
-		Handler:middleware.CorsMiddleware(mux),
+	server = &http.Server{
+		Addr:    fmt.Sprintf(":%d", port),
+		Handler: middleware.CorsMiddleware(mux),
 	}
-	fmt.Printf("%s running on :%d\n",appName,port)
-	err:=LoadIdentity()
-	if err!=nil{
+	fmt.Printf("%s running on :%d\n", appName, port)
+	err := LoadIdentity()
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	InitDemonState()
 	StartMonitor()
-	err=server.ListenAndServe()
-	if err!=nil && err!=http.ErrServerClosed{
+	err = server.ListenAndServe()
+	if err != nil && err != http.ErrServerClosed {
 		fmt.Println(err)
 	}
 }

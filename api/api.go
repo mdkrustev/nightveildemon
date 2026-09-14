@@ -15,5 +15,7 @@ func RegisterAPIRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/folder-picker", apiFolderPickerHandler)
 	mux.HandleFunc("/api/check-folder", apiCheckFolderHandler)
 	mux.HandleFunc("/api/storage-activate", apiStorageActivateHandler)
+	mux.HandleFunc("/api/song-assets-upload", apiSongAssetsUploadHandler)
+	mux.HandleFunc("/api/song-assets-get", apiSongAssetsGetHandler)
 
 }

@@ -4,48 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"nightveil-demon/media"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 )
-
-func ffmpegPath() string {
-
-	// DEV MODE
-	if runtime.GOOS == "windows" {
-		if _, err := os.Stat("./bin/ffmpeg.exe"); err == nil {
-			return "./bin/ffmpeg.exe"
-		}
-	} else {
-		if _, err := os.Stat("./bin/ffmpeg"); err == nil {
-			return "./bin/ffmpeg"
-		}
-	}
-
-	exe, err := os.Executable()
-	if err != nil {
-		return "ffmpeg"
-	}
-
-	appDir := filepath.Dir(exe)
-
-	switch runtime.GOOS {
-
-	case "windows":
-		return filepath.Join(appDir, "ffmpeg.exe")
-
-	case "darwin":
-		return filepath.Join(appDir, "../Resources/ffmpeg")
-
-	case "linux":
-		return filepath.Join(appDir, "ffmpeg")
-
-	default:
-		return "ffmpeg"
-	}
-}
 
 func renderHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -143,7 +107,7 @@ func renderHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		cmd := exec.Command(
-			ffmpegPath(),
+			media.FFmpegPath(),
 			args...,
 		)
 
@@ -196,7 +160,7 @@ func renderHandler(w http.ResponseWriter, r *http.Request) {
 	)
 
 	cmd := exec.Command(
-		ffmpegPath(),
+		media.FFmpegPath(),
 
 		"-y",
 
