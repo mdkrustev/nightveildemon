@@ -66,8 +66,6 @@ func apiSongAssetsUploadHandler(
 		return
 	}
 
-	// storagePath/storageName/hashName
-
 	hashDir := filepath.Join(
 		storagePath,
 		storageName,
@@ -88,8 +86,6 @@ func apiSongAssetsUploadHandler(
 		return
 	}
 
-	// hashName/songId
-
 	songDir := filepath.Join(
 		hashDir,
 		strconv.Itoa(id),
@@ -109,10 +105,6 @@ func apiSongAssetsUploadHandler(
 
 		return
 	}
-
-	/*
-		AUDIO
-	*/
 
 	audioFile, _, err := r.FormFile(
 		"audio",
@@ -192,10 +184,6 @@ func apiSongAssetsUploadHandler(
 		return
 	}
 
-	/*
-		COVER
-	*/
-
 	coverFile, _, err := r.FormFile(
 		"cover",
 	)
@@ -264,17 +252,31 @@ func apiSongAssetsUploadHandler(
 
 			return
 		}
+	}
 
+	err = UpdateSongManifest(
+		storagePath,
+		storageName,
+		hashName,
+		id,
+	)
+
+	if err != nil {
+
+		json.NewEncoder(w).Encode(
+			map[string]string{
+				"error": "Unable to update manifest: " + err.Error(),
+			},
+		)
+
+		return
 	}
 
 	json.NewEncoder(w).Encode(
 		map[string]interface{}{
-
 			"status": "success",
-
 			"songId": id,
-
-			"path": songDir,
+			"path":   songDir,
 		},
 	)
 
