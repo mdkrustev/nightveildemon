@@ -17,5 +17,9 @@ func RegisterAPIRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/storage-activate", apiStorageActivateHandler)
 	mux.HandleFunc("/api/song-assets-upload", apiSongAssetsUploadHandler)
 	mux.HandleFunc("/api/song-assets-get", apiSongAssetsGetHandler)
+	mux.HandleFunc("/api/song-additional-assets-upload", apiSongAdditionalAssetsUploadHandler)
+	mux.HandleFunc("/api/song-additional-asset-get", apiSongAdditionalAssetGetHandler)
+	mux.HandleFunc("/api/song-additional-assets-get", apiSongAdditionalAssetsGetHandler)
+	mux.HandleFunc("/api/song-additional-asset-delete", apiSongAdditionalAssetDeleteHandler)
 
 }
