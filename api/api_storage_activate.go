@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
@@ -46,31 +45,34 @@ func apiStorageActivateHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+	packagePath := filepath.Join(
+		body.Path,
+		"package.json",
+	)
+	if _, err := os.Stat(packagePath); os.IsNotExist(err) {
+		packageJSON := `{
+  "devDependencies": {
+    "wrangler": "^4.128.0"
+  }
+}`
+		if err := os.WriteFile(
+			packagePath,
+			[]byte(packageJSON),
+			0644,
+		); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]any{
+				"success": false,
+				"error":   err.Error(),
+			})
+			return
+		}
+	}
 	storageDir := filepath.Join(
 		body.Path,
 		body.StorageName,
 	)
 	if err := os.MkdirAll(storageDir, 0755); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]any{
-			"success": false,
-			"error":   err.Error(),
-		})
-		return
-	}
-	packageJSON := fmt.Sprintf(`{
-  "devDependencies": {
-    "wrangler": "^4.128.0"
-  },
-  "scripts": {
-    "deploy": "wrangler pages deploy . --project-name=%s"
-  }
-}`, body.StorageName)
-	if err := os.WriteFile(
-		filepath.Join(storageDir, "package.json"),
-		[]byte(packageJSON),
-		0644,
-	); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{
 			"success": false,
@@ -125,17 +127,36 @@ func apiStorageActivateHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	cmd := exec.Command(
-		"npm",
-		"install",
+	nodeModulesPath := filepath.Join(
+		body.Path,
+		"node_modules",
 	)
-	cmd.Dir = storageDir
-	output, err := cmd.CombinedOutput()
+	if _, err := os.Stat(nodeModulesPath); os.IsNotExist(err) {
+		cmd := exec.Command(
+			"npm",
+			"install",
+		)
+		cmd.Dir = body.Path
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]any{
+				"success": false,
+				"error":   string(output),
+			})
+			return
+		}
+	}
+	err := RestoreStorageAssets(
+		body.Path,
+		body.StorageName,
+		body.HashDirectory,
+	)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{
 			"success": false,
-			"error":   string(output),
+			"error":   err.Error(),
 		})
 		return
 	}

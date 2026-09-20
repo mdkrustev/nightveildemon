@@ -20,6 +20,17 @@ func apiStorageDeployHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+	syncResult, err := SynchronizeStorage(
+		storagePath,
+		storageName,
+		hashName,
+	)
+	if err != nil {
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Storage synchronization failed: " + err.Error(),
+		})
+		return
+	}
 	manifestPath := filepath.Join(
 		storagePath,
 		storageName,
@@ -34,8 +45,7 @@ func apiStorageDeployHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var manifest SongManifest
-	err = json.Unmarshal(data, &manifest)
-	if err != nil {
+	if err := json.Unmarshal(data, &manifest); err != nil {
 		json.NewEncoder(w).Encode(map[string]string{
 			"error": "Invalid manifest",
 		})
@@ -44,32 +54,37 @@ func apiStorageDeployHandler(w http.ResponseWriter, r *http.Request) {
 	oldVersion := manifest.DeployVersion
 	newVersion := oldVersion + 1
 	manifest.DeployVersion = newVersion
-	newData, _ := json.MarshalIndent(
+	newData, err := json.MarshalIndent(
 		manifest,
 		"",
 		"  ",
 	)
-	err = os.WriteFile(
+	if err != nil {
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Unable to encode manifest",
+		})
+		return
+	}
+	if err := os.WriteFile(
 		manifestPath,
 		newData,
 		0644,
-	)
-	if err != nil {
+	); err != nil {
 		json.NewEncoder(w).Encode(map[string]string{
 			"error": "Unable to update manifest",
 		})
 		return
 	}
-	deployDir := filepath.Join(
-		storagePath,
+	cmd := exec.Command(
+		"npx",
+		"wrangler",
+		"pages",
+		"deploy",
+		storageName,
+		"--project-name",
 		storageName,
 	)
-	cmd := exec.Command(
-		"npm",
-		"run",
-		"deploy",
-	)
-	cmd.Dir = deployDir
+	cmd.Dir = storagePath
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		manifest.DeployVersion = oldVersion
@@ -78,7 +93,7 @@ func apiStorageDeployHandler(w http.ResponseWriter, r *http.Request) {
 			"",
 			"  ",
 		)
-		os.WriteFile(
+		_ = os.WriteFile(
 			manifestPath,
 			rollback,
 			0644,
@@ -93,6 +108,7 @@ func apiStorageDeployHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":        "success",
 		"deployVersion": newVersion,
+		"sync":          syncResult,
 		"output":        string(output),
 	})
 }
