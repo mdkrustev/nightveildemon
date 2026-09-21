@@ -20,17 +20,19 @@ func apiStorageDeployHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	syncResult, err := SynchronizeStorage(
-		storagePath,
-		storageName,
-		hashName,
-	)
-	if err != nil {
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "Storage synchronization failed: " + err.Error(),
-		})
-		return
-	}
+	/*
+		syncResult, err := SynchronizeStorage(
+			storagePath,
+			storageName,
+			hashName,
+		)
+		if err != nil {
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": "Storage synchronization failed: " + err.Error(),
+			})
+			return
+		}*/
+
 	manifestPath := filepath.Join(
 		storagePath,
 		storageName,
@@ -108,7 +110,7 @@ func apiStorageDeployHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":        "success",
 		"deployVersion": newVersion,
-		"sync":          syncResult,
-		"output":        string(output),
+		//"sync":          syncResult,
+		"output": string(output),
 	})
 }
